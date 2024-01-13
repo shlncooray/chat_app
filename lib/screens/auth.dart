@@ -1,4 +1,7 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+
+final firebaseAuthInstance = FirebaseAuth.instance;
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -15,14 +18,50 @@ class _AuthScreenState extends State<AuthScreen> {
   var _isLogin = true;
   var _enteredEmail = '';
   var _enteredPassword = '';
+  var _isLoading = false;
 
-  void _submit() {
+  void _submit() async {
     final _isValid = _formKey.currentState!.validate();
 
-    if (_isValid) {
-      _formKey.currentState!.save();
-      print(_enteredEmail);
-      print(_enteredPassword);
+    if (!_isValid) {
+      return;
+    }
+
+    _formKey.currentState!.save();
+
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+      if (_isLogin) {
+        // Login
+        await firebaseAuthInstance.signInWithEmailAndPassword(
+            email: _enteredEmail, password: _enteredPassword);
+        setState(() {
+          _isLoading = false;
+        });
+      } else {
+        // Signup
+        await firebaseAuthInstance.createUserWithEmailAndPassword(
+            email: _enteredEmail, password: _enteredPassword);
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('User Created'),
+          backgroundColor: Theme.of(context).colorScheme.secondary,
+        ));
+      }
+    } on FirebaseAuthException catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(e.message ?? 'Authentication/Signup failed'),
+        backgroundColor: Theme.of(context).colorScheme.error,
+      ));
     }
   }
 
@@ -97,7 +136,12 @@ class _AuthScreenState extends State<AuthScreen> {
                                     .colorScheme
                                     .primaryContainer,
                               ),
-                              child: Text(_isLogin ? 'Login' : 'Signup'),
+                              child: _isLoading
+                                  ? const CircularProgressIndicator(
+                                      semanticsLabel:
+                                          'Circular progress indicator',
+                                    )
+                                  : Text(_isLogin ? 'Login' : 'Signup'),
                             ),
                             TextButton(
                               onPressed: () {
