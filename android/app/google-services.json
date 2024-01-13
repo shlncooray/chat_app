@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "524944497760",
+    "project_id": "icet-chat-app",
+    "storage_bucket": "icet-chat-app.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:524944497760:android:beefb981cce2a395eab705",
+        "android_client_info": {
+          "package_name": "com.example.chat_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCMamnjdHRQeXB-cpwESwYpvBI7FEfWvIM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
