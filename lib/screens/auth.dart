@@ -1,4 +1,9 @@
+import 'dart:io';
+
+import 'package:chat_app/widgets/user_image_picker.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 
 final firebaseAuthInstance = FirebaseAuth.instance;
@@ -17,13 +22,15 @@ class _AuthScreenState extends State<AuthScreen> {
   final _formKey = GlobalKey<FormState>();
   var _isLogin = true;
   var _enteredEmail = '';
+  var _enteredUserName = '';
   var _enteredPassword = '';
   var _isLoading = false;
+  File? _selectedImage;
 
   void _submit() async {
     final _isValid = _formKey.currentState!.validate();
 
-    if (!_isValid) {
+    if (!_isValid || !_isLogin && _selectedImage == null) {
       return;
     }
 
@@ -42,11 +49,27 @@ class _AuthScreenState extends State<AuthScreen> {
         });
       } else {
         // Signup
-        await firebaseAuthInstance.createUserWithEmailAndPassword(
-            email: _enteredEmail, password: _enteredPassword);
-        setState(() {
-          _isLoading = false;
+        final signupResult =
+            await firebaseAuthInstance.createUserWithEmailAndPassword(
+                email: _enteredEmail, password: _enteredPassword);
+
+        final fileStorageRef = FirebaseStorage.instance
+            .ref()
+            .child('user')
+            .child('${signupResult.user!.uid}.jpg');
+
+        await fileStorageRef.putFile(_selectedImage!);
+        final imageUrl = await fileStorageRef.getDownloadURL();
+
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(signupResult.user!.uid)
+            .set({
+          'email': _enteredEmail,
+          'user_name': _enteredUserName,
+          'user_image': imageUrl,
         });
+
         ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('User Created'),
@@ -64,8 +87,6 @@ class _AuthScreenState extends State<AuthScreen> {
       ));
     }
   }
-
-  // #TODO - Implementa Submit function & Validations
 
   @override
   Widget build(BuildContext context) {
@@ -96,6 +117,12 @@ class _AuthScreenState extends State<AuthScreen> {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
+                            if (!_isLogin)
+                              UserImagePicker(
+                                onPickedImage: (pickedImage) {
+                                  _selectedImage = pickedImage;
+                                },
+                              ),
                             TextFormField(
                               decoration: const InputDecoration(
                                   labelText: 'Email Address'),
@@ -114,6 +141,21 @@ class _AuthScreenState extends State<AuthScreen> {
                                 _enteredEmail = textValue!;
                               },
                             ),
+                            if (!_isLogin)
+                              TextFormField(
+                                  decoration: const InputDecoration(
+                                      labelText: 'User Name'),
+                                  validator: (value) {
+                                    if (value == null ||
+                                        value.trim().isEmpty ||
+                                        value.trim().length < 4) {
+                                      return 'Username must be at least 4 characters long';
+                                    }
+                                    return null;
+                                  },
+                                  onSaved: (userNameValue) {
+                                    _enteredUserName = userNameValue!;
+                                  }),
                             TextFormField(
                               decoration:
                                   const InputDecoration(labelText: 'Password'),
