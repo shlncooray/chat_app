@@ -20,6 +20,7 @@ class ChatScreen extends StatelessWidget {
       body: Center(
           child: Text(
               'Hurrey ${FirebaseAuth.instance.currentUser?.email} you are Logged in!')),
+      // #TODO Add new chat messages & new message screens
     );
   }
 }
