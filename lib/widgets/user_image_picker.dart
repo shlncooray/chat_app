@@ -23,8 +23,6 @@ class _UserImagePickerState extends State<UserImagePicker> {
       return;
     }
 
-    print(pickedImage);
-
     setState(() {
       pickedImageFile = File(pickedImage.path);
     });
